@@ -1,0 +1,11 @@
+{
+  "name": "localshare-demo-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive test application for verifying LocalShare HTTPS tunnels",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  }
+}
+

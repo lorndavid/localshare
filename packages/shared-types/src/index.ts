@@ -13,7 +13,7 @@ export type TunnelState = (typeof TUNNEL_STATES)[number];
 export const TUNNEL_KINDS = ['QUICK', 'NAMED'] as const;
 export type TunnelKind = (typeof TUNNEL_KINDS)[number];
 
-export const TUNNEL_PROVIDERS = ['cloudflare'] as const;
+export const TUNNEL_PROVIDERS = ['localshare', 'cloudflare'] as const;
 export type TunnelProviderId = (typeof TUNNEL_PROVIDERS)[number];
 
 export const ACCESS_MODES = ['PUBLIC', 'PASSWORD', 'CLOUDFLARE_ACCESS'] as const;

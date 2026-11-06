@@ -194,9 +194,12 @@
       "properties": {
         "localshare.provider": {
           "type": "string",
-          "enum": ["cloudflare"],
-          "enumDescriptions": ["Cloudflare Tunnel (Quick Tunnels and named tunnels)"],
-          "default": "cloudflare",
+          "enum": ["localshare", "cloudflare"],
+          "enumDescriptions": [
+            "LocalShare Native Relay (*.lorndavid.online — no cloudflared or Cloudflare account needed)",
+            "Cloudflare Tunnel (Quick Tunnels *.trycloudflare.com and Named Tunnels)"
+          ],
+          "default": "localshare",
           "description": "Tunnel provider used for sharing."
         },
         "localshare.cloudflared.path": {

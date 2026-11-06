@@ -8,6 +8,7 @@ import { AppModule } from './app.module';
 import { loadApiConfig } from './common/config';
 import { GlobalApiExceptionFilter } from './common/error.filter';
 import { requestIdMiddleware } from './common/request-id.middleware';
+import { LocalShareTunnelRelay } from './relay/tunnel-relay';
 
 export function configureNestApp(app: INestApplication): void {
   const cfg = loadApiConfig();
@@ -46,6 +47,9 @@ async function bootstrap(): Promise<void> {
   const cfg = loadApiConfig();
   const app = await NestFactory.create(AppModule, { logger: ['error', 'warn', 'log'] });
   configureNestApp(app);
+  await app.init();
+  const relay = new LocalShareTunnelRelay(process.env.TUNNEL_BASE_DOMAIN || 'lorndavid.online');
+  relay.attach(app.getHttpServer());
   await app.listen(cfg.port, '0.0.0.0');
 }
 

@@ -373,13 +373,28 @@ export class DomainsTreeProvider extends BaseTreeProvider<vscode.TreeItem> {
     const st = this.getState();
     const items: vscode.TreeItem[] = [];
 
+    const relaySubdomain = new vscode.TreeItem(
+      'Share on *.lorndavid.online Subdomain…',
+      vscode.TreeItemCollapsibleState.None,
+    );
+    relaySubdomain.iconPath = new vscode.ThemeIcon(
+      'globe',
+      new vscode.ThemeColor('charts.green'),
+    );
+    relaySubdomain.description = 'No token required';
+    relaySubdomain.command = {
+      command: 'localshare.addCustomDomain',
+      title: 'Share on *.lorndavid.online Subdomain',
+    };
+    items.push(relaySubdomain);
+
     if (!st.cloudflareAccount) {
       const connect = new vscode.TreeItem(
         'Connect Cloudflare Account…',
         vscode.TreeItemCollapsibleState.None,
       );
       connect.iconPath = new vscode.ThemeIcon('plug');
-      connect.description = 'Required for named tunnels & custom domains';
+      connect.description = 'Optional: for external custom domains';
       connect.command = {
         command: 'localshare.connectCloudflare',
         title: 'Connect Cloudflare Account',

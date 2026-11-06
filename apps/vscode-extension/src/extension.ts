@@ -32,6 +32,8 @@ import {
   type CloudflareNamedTunnel,
 } from './core/providers/cloudflareApi';
 import { CloudflareTunnelProvider } from './core/providers/cloudflareQuick';
+import { LocalShareRelayProvider } from './core/providers/localshareRelay';
+import type { TunnelConnectConfig, TunnelProvider } from './core/providers/types';
 import {
   TunnelManager,
   buildCustomerPreviewMessage,
@@ -142,10 +144,50 @@ export async function activate(
     return meta.binaryPath;
   };
 
-  const provider = new CloudflareTunnelProvider({
+  const cfProvider = new CloudflareTunnelProvider({
     resolveBinaryPath: ensureBinaryPath,
     logger,
   });
+
+  const relayProvider = new LocalShareRelayProvider(
+    () => {
+      const raw = getCfg().get<string>('cloud.apiUrl', '') || 'https://cloud.lorndavid.online/api/v1';
+      return raw.replace(/\/api\/v1\/?$/, '');
+    },
+    logger,
+    () => getCfg().get<boolean>('security.allowLanTargets', false),
+  );
+
+  const getActiveProvider = (): TunnelProvider =>
+    getCfg().get<string>('provider', 'localshare') === 'cloudflare' ? cfProvider : relayProvider;
+
+  const provider: TunnelProvider = {
+    get id() {
+      return getActiveProvider().id;
+    },
+    validateConfiguration(config: TunnelConnectConfig) {
+      return getActiveProvider().validateConfiguration(config);
+    },
+    connect(config: TunnelConnectConfig) {
+      if (config.tunnelToken) {
+        return cfProvider.connect(config);
+      }
+      return getActiveProvider().connect(config);
+    },
+    disconnect(tunnelId: string) {
+      if (cfProvider.getStatus(tunnelId)) return cfProvider.disconnect(tunnelId);
+      return relayProvider.disconnect(tunnelId);
+    },
+    getStatus(tunnelId: string) {
+      return relayProvider.getStatus(tunnelId) ?? cfProvider.getStatus(tunnelId);
+    },
+    getPublicUrl(tunnelId: string) {
+      return relayProvider.getPublicUrl(tunnelId) ?? cfProvider.getPublicUrl(tunnelId);
+    },
+    listTunnels() {
+      return [...relayProvider.listTunnels(), ...cfProvider.listTunnels()];
+    },
+  };
 
   const createCloudClient = () =>
     new LocalShareCloudClient({
@@ -353,8 +395,27 @@ export async function activate(
     frameworkLabel?: string;
     processName?: string;
     group?: string;
+    hostname?: string;
   }): Promise<ActiveShare | undefined> => {
-    const confirmed = await confirmExposure(params.host, params.port, params.name);
+    let chosenHostname = params.hostname;
+    if (!chosenHostname && getActiveProvider().id === 'localshare') {
+      const subInput = await vscode.window.showInputBox({
+        prompt:
+          'Optional: Enter a custom subdomain for *.lorndavid.online (or press Enter for an automatic link)',
+        placeHolder: 'e.g. myapp  →  https://myapp.lorndavid.online',
+      });
+      if (subInput === undefined) return undefined;
+      if (subInput.trim()) {
+        chosenHostname = subInput.trim().toLowerCase();
+      }
+    }
+
+    const confirmed = await confirmExposure(
+      params.host,
+      params.port,
+      params.name,
+      Boolean(chosenHostname),
+    );
     if (!confirmed) return undefined;
 
     try {
@@ -375,6 +436,7 @@ export async function activate(
             frameworkLabel: params.frameworkLabel,
             processName: params.processName,
             group: params.group,
+            ...(chosenHostname ? { hostname: chosenHostname, kind: 'NAMED' as const } : {}),
             signal: abort.signal,
           });
         },
@@ -910,6 +972,46 @@ export async function activate(
   });
 
   register('localshare.addCustomDomain', async () => {
+    if (getActiveProvider().id === 'localshare') {
+      const subInput = await vscode.window.showInputBox({
+        prompt: 'Enter your custom subdomain on lorndavid.online (no Cloudflare token needed!)',
+        placeHolder: 'demo  (creates https://demo.lorndavid.online)',
+        validateInput: (v) => {
+          const clean = v.trim().toLowerCase().replace(/\.lorndavid\.online$/, '');
+          if (!/^[a-z0-9-]{3,40}$/.test(clean)) {
+            return 'Subdomain must be 3-40 lowercase letters, numbers, or hyphens.';
+          }
+          if (['cloud', 'api', 'www', 'admin'].includes(clean)) {
+            return `"${clean}" is a reserved system subdomain.`;
+          }
+          return undefined;
+        },
+      });
+      if (!subInput) return;
+      const cleanSub = subInput.trim().toLowerCase().replace(/\.lorndavid\.online$/, '');
+      const fullHostname = `${cleanSub}.lorndavid.online`;
+
+      const rawPort = await vscode.window.showInputBox({
+        prompt: `Local port that https://${fullHostname} should forward to`,
+        value: String(servers.find((s) => s.shareable)?.port ?? 4500),
+        validateInput: (v) => {
+          const r = validatePort(v);
+          return r.ok ? undefined : r.error;
+        },
+      });
+      if (!rawPort) return;
+      const portRes = validatePort(rawPort);
+      if (!portRes.ok) return;
+
+      await runStartShareFlow({
+        name: fullHostname,
+        host: 'localhost',
+        port: portRes.value,
+        hostname: cleanSub,
+      });
+      return;
+    }
+
     let account = getSavedAccount();
     if (!account) {
       await connectOrRotateCloudflare(false);
