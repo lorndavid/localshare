@@ -3,7 +3,7 @@
   "displayName": "LocalShare",
   "description": "Securely share local dev servers through HTTPS tunnels. Detects your servers, starts sharing in one click, supports custom domains and access control.",
   "version": "1.0.0",
-  "publisher": "lorndavid",
+  "publisher": "LornDavid",
   "license": "MIT",
   "icon": "media/icon.png",
   "engines": {
@@ -24,7 +24,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/localshare/localshare"
+    "url": "https://github.com/lorndavid/localshare"
   },
   "main": "./dist/extension.js",
   "activationEvents": [
