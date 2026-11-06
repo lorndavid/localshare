@@ -18,7 +18,7 @@ export default defineConfig({
         PORT: '3100',
         DATABASE_URL:
           process.env.DATABASE_URL ??
-          'postgresql://localshare:localshare@localhost:55432/localshare_test?schema=public',
+          'postgresql://localshare:localshare@localhost:55432/localshare?schema=public',
         JWT_SECRET: 'e2e-playwright-jwt-secret-key-at-least-32-chars',
         PROVIDER_ENCRYPTION_KEY: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=',
         CORS_ORIGINS: 'http://localhost:5180',

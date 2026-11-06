@@ -20,6 +20,7 @@ import type {
   OrganizationOverviewDto,
   Paginated,
   TunnelDto,
+  UpsertTunnelRequest,
   UserDto,
   WorkspaceDto,
 } from '@localshare/shared-types';
@@ -281,6 +282,19 @@ export const apiClient = {
       body: JSON.stringify(body),
     });
   },
+  updateWorkspace(
+    orgId: string,
+    workspaceId: string,
+    body: { name?: string; description?: string },
+  ): Promise<WorkspaceDto> {
+    return apiRequest<WorkspaceDto>(
+      `/organizations/${encodeURIComponent(orgId)}/workspaces/${encodeURIComponent(workspaceId)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      },
+    );
+  },
   deleteWorkspace(orgId: string, workspaceId: string): Promise<void> {
     return apiRequest<void>(
       `/organizations/${encodeURIComponent(orgId)}/workspaces/${encodeURIComponent(workspaceId)}`,
@@ -291,16 +305,23 @@ export const apiClient = {
   // Tunnels
   listTunnels(
     orgId: string,
-    params: { page?: number; pageSize?: number; state?: string } = {},
+    params: { page?: number; pageSize?: number; state?: string; workspaceId?: string } = {},
   ): Promise<Paginated<TunnelDto>> {
     const q = new URLSearchParams();
     if (params.page) q.set('page', String(params.page));
     if (params.pageSize) q.set('pageSize', String(params.pageSize));
     if (params.state) q.set('state', params.state);
+    if (params.workspaceId) q.set('workspaceId', params.workspaceId);
     const qs = q.toString();
     return apiRequest<Paginated<TunnelDto>>(
       `/organizations/${encodeURIComponent(orgId)}/tunnels${qs ? `?${qs}` : ''}`,
     );
+  },
+  upsertTunnel(orgId: string, body: UpsertTunnelRequest): Promise<TunnelDto> {
+    return apiRequest<TunnelDto>(`/organizations/${encodeURIComponent(orgId)}/tunnels`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
   },
   deleteTunnel(orgId: string, tunnelId: string): Promise<void> {
     return apiRequest<void>(

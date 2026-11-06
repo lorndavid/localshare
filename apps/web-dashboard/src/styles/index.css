@@ -3,44 +3,136 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --ls-bg: #ffffff;
-  --ls-surface: #fafafa;
-  --ls-border: #e4e4e7;
-  --ls-border-strong: #000000;
-  --ls-text: #09090b;
-  --ls-muted: #52525b;
-  --ls-accent: #000000;
-  --ls-grid: rgba(0, 0, 0, 0.035);
+  --ls-bg: #F7F7F5;
+  --ls-surface: #FFFFFF;
+  --ls-surface-secondary: #FAFAF9;
+  --ls-hover: #F1F1EE;
+  --ls-text: #171717;
+  --ls-text-secondary: #555550;
+  --ls-muted: #85857E;
+  --ls-border: #E9E9E5;
+  --ls-border-strong: #DEDED8;
+  --ls-btn-bg: #171717;
+  --ls-btn-text: #FFFFFF;
 }
 
 .dark {
-  --ls-bg: #000000;
-  --ls-surface: #09090b;
-  --ls-border: #27272a;
-  --ls-border-strong: #ffffff;
-  --ls-text: #fafafa;
-  --ls-muted: #a1a1aa;
-  --ls-accent: #ffffff;
-  --ls-grid: rgba(255, 255, 255, 0.04);
+  --ls-bg: #101010;
+  --ls-surface: #171717;
+  --ls-surface-secondary: #1B1B1B;
+  --ls-hover: #242424;
+  --ls-text: #F2F2EF;
+  --ls-text-secondary: #B1B1AA;
+  --ls-muted: #85857E;
+  --ls-border: #2B2B29;
+  --ls-border-strong: #393936;
+  --ls-btn-bg: #F2F2EF;
+  --ls-btn-text: #141414;
 }
 
 body {
   background-color: var(--ls-bg);
   color: var(--ls-text);
-  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-image:
-    linear-gradient(to right, var(--ls-grid) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--ls-grid) 1px, transparent 1px);
-  background-size: 32px 32px;
+  font-family: "DM Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0;
+  overflow-x: hidden;
 }
 
-/* Classic architectural line border helper */
-.ls-card {
-  background-color: var(--ls-bg);
+h1, h2, h3, h4, .font-heading {
+  font-family: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.ls-surface {
+  background-color: var(--ls-surface);
   border: 1px solid var(--ls-border);
-  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  border-radius: 11px;
 }
 
-.ls-card:hover {
-  border-color: var(--ls-muted);
+.ls-surface-secondary {
+  background-color: var(--ls-surface-secondary);
+  border: 1px solid var(--ls-border);
+  border-radius: 10px;
+}
+
+.ls-input {
+  background-color: var(--ls-surface);
+  border: 1px solid var(--ls-border-strong);
+  color: var(--ls-text);
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.ls-input::placeholder {
+  color: var(--ls-muted);
+}
+
+.ls-input:focus {
+  outline: none;
+  border-color: var(--ls-text);
+  box-shadow: 0 0 0 2px rgba(133, 133, 126, 0.2);
+}
+
+.ls-btn-primary {
+  background-color: var(--ls-btn-bg);
+  color: var(--ls-btn-text);
+  border: 1px solid var(--ls-btn-bg);
+  border-radius: 7px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 120ms ease;
+}
+
+.ls-btn-primary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.ls-btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ls-btn-secondary {
+  background-color: var(--ls-surface);
+  color: var(--ls-text);
+  border: 1px solid var(--ls-border-strong);
+  border-radius: 7px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.ls-btn-secondary:hover:not(:disabled) {
+  background-color: var(--ls-hover);
+  border-color: var(--ls-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
