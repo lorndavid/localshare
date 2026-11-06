@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 ENV_FILE="${SCRIPT_DIR}/.env"
 DOMAIN="${1:-https://cloud.lorndavid.online}"
-GATEWAY_PORT="${GATEWAY_PORT:-8080}"
+GATEWAY_PORT="${GATEWAY_PORT:-8090}"
 
 echo "============================================================"
 echo " LocalShare Production Deployment"
