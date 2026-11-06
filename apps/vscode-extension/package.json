@@ -1,0 +1,324 @@
+{
+  "name": "localshare-vscode",
+  "displayName": "LocalShare",
+  "description": "Securely share local dev servers through HTTPS tunnels. Detects your servers, starts sharing in one click, supports custom domains and access control.",
+  "version": "1.0.0",
+  "publisher": "lorndavid",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other",
+    "Testing"
+  ],
+  "keywords": [
+    "tunnel",
+    "share",
+    "localhost",
+    "preview",
+    "cloudflare",
+    "https",
+    "ngrok alternative"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/localshare/localshare"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "In untrusted workspaces LocalShare does not read project files for detection; you can still share manually entered ports."
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "localshare",
+          "title": "LocalShare",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "localshare": [
+        {
+          "id": "localshare.workspace",
+          "name": "Workspace",
+          "icon": "media/activity.svg"
+        },
+        {
+          "id": "localshare.servers",
+          "name": "Local Servers",
+          "icon": "media/activity.svg"
+        },
+        {
+          "id": "localshare.shares",
+          "name": "Active Shares",
+          "icon": "media/activity.svg"
+        },
+        {
+          "id": "localshare.domains",
+          "name": "Custom Domains",
+          "icon": "media/activity.svg",
+          "visibility": "collapsed"
+        },
+        {
+          "id": "localshare.security",
+          "name": "Security",
+          "icon": "media/activity.svg",
+          "visibility": "collapsed"
+        },
+        {
+          "id": "localshare.settings",
+          "name": "Settings",
+          "icon": "media/activity.svg",
+          "visibility": "collapsed"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "localshare.servers",
+        "contents": "No local servers detected yet.\nStart your dev server (for example `npm run dev`), then refresh.\n[$(refresh) Refresh](command:localshare.refreshServers)\n[$(add) Share a Port Manually](command:localshare.shareCustomPort)"
+      },
+      {
+        "view": "localshare.shares",
+        "contents": "Nothing is being shared.\n[$(add) Start Sharing](command:localshare.startSharing)\nLocalShare creates a temporary HTTPS URL for a local server. You will be asked to confirm before anything becomes public."
+      },
+      {
+        "view": "localshare.domains",
+        "contents": "Use a stable hostname such as preview.customer.com with a Cloudflare named tunnel.\n[$(globe) Add Custom Domain](command:localshare.addCustomDomain)\nRequires a Cloudflare account with the domain's zone. [Learn more](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)"
+      }
+    ],
+    "commands": [
+      { "command": "localshare.startSharing", "title": "Start Sharing…", "category": "LocalShare", "icon": "$(add)" },
+      { "command": "localshare.startSharingServer", "title": "Start Sharing", "category": "LocalShare", "icon": "$(broadcast)" },
+      { "command": "localshare.shareCustomPort", "title": "Share a Port Manually…", "category": "LocalShare", "icon": "$(plug)" },
+      { "command": "localshare.refreshServers", "title": "Refresh Local Servers", "category": "LocalShare", "icon": "$(refresh)" },
+      { "command": "localshare.stopShare", "title": "Stop Sharing", "category": "LocalShare", "icon": "$(debug-stop)" },
+      { "command": "localshare.stopAllShares", "title": "Stop All Shares", "category": "LocalShare", "icon": "$(close-all)" },
+      { "command": "localshare.restartShare", "title": "Restart Share", "category": "LocalShare", "icon": "$(debug-restart)" },
+      { "command": "localshare.copyUrl", "title": "Copy Public URL", "category": "LocalShare", "icon": "$(copy)" },
+      { "command": "localshare.openUrl", "title": "Open Public URL", "category": "LocalShare", "icon": "$(link-external)" },
+      { "command": "localshare.copyCustomerMessage", "title": "Copy Customer Preview Message", "category": "LocalShare", "icon": "$(mail)" },
+      { "command": "localshare.renameShare", "title": "Rename Share…", "category": "LocalShare" },
+      { "command": "localshare.editShareDescription", "title": "Edit Description…", "category": "LocalShare" },
+      { "command": "localshare.setShareGroup", "title": "Set Group…", "category": "LocalShare" },
+      { "command": "localshare.shareGroup", "title": "Share Project Group…", "category": "LocalShare", "icon": "$(layers)" },
+      { "command": "localshare.reshareFromHistory", "title": "Share Again", "category": "LocalShare", "icon": "$(history)" },
+      { "command": "localshare.clearHistory", "title": "Clear Share History", "category": "LocalShare", "icon": "$(clear-all)" },
+      { "command": "localshare.setPassword", "title": "Set Preview Password…", "category": "LocalShare", "icon": "$(lock)" },
+      { "command": "localshare.clearPassword", "title": "Remove Preview Password", "category": "LocalShare" },
+      { "command": "localshare.installCloudflared", "title": "Install or Update cloudflared", "category": "LocalShare", "icon": "$(cloud-download)" },
+      { "command": "localshare.runDiagnostics", "title": "Run Diagnostics", "category": "LocalShare", "icon": "$(pulse)" },
+      { "command": "localshare.showLogs", "title": "Show Logs", "category": "LocalShare", "icon": "$(output)" },
+      { "command": "localshare.showAuditLog", "title": "Show Security Audit Log", "category": "LocalShare", "icon": "$(shield)" },
+      { "command": "localshare.openSettings", "title": "Open Settings", "category": "LocalShare", "icon": "$(gear)" },
+      { "command": "localshare.connectCloudflare", "title": "Connect Cloudflare Account…", "category": "LocalShare", "icon": "$(plug)" },
+      { "command": "localshare.rotateCloudflareToken", "title": "Update Cloudflare API Token…", "category": "LocalShare" },
+      { "command": "localshare.disconnectCloudflare", "title": "Disconnect Cloudflare Account", "category": "LocalShare" },
+      { "command": "localshare.addCustomDomain", "title": "Add Custom Domain…", "category": "LocalShare", "icon": "$(add)" },
+      { "command": "localshare.verifyCustomDomain", "title": "Verify Domain", "category": "LocalShare", "icon": "$(check-all)" },
+      { "command": "localshare.removeCustomDomain", "title": "Remove Custom Domain…", "category": "LocalShare", "icon": "$(trash)" },
+      { "command": "localshare.startNamedTunnel", "title": "Start Named Tunnel", "category": "LocalShare", "icon": "$(play)" },
+      { "command": "localshare.deleteNamedTunnel", "title": "Delete Named Tunnel…", "category": "LocalShare", "icon": "$(trash)" },
+      { "command": "localshare.copyDomainUrl", "title": "Copy Domain URL", "category": "LocalShare", "icon": "$(copy)" },
+      { "command": "localshare.openDomainUrl", "title": "Open Domain URL", "category": "LocalShare", "icon": "$(link-external)" },
+      { "command": "localshare.connectCloud", "title": "Connect LocalShare Cloud…", "category": "LocalShare" },
+      { "command": "localshare.disconnectCloud", "title": "Disconnect LocalShare Cloud", "category": "LocalShare" },
+      { "command": "localshare.syncCloud", "title": "Sync with LocalShare Cloud", "category": "LocalShare", "icon": "$(sync)" }
+    ],
+    "keybindings": [
+      { "command": "localshare.startSharing", "key": "ctrl+alt+shift+s", "mac": "cmd+alt+shift+s" },
+      { "command": "localshare.copyUrl", "key": "ctrl+alt+shift+c", "mac": "cmd+alt+shift+c" },
+      { "command": "localshare.stopAllShares", "key": "ctrl+alt+shift+x", "mac": "cmd+alt+shift+x" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "localshare.startSharing", "when": "view == localshare.workspace || view == localshare.shares", "group": "navigation@1" },
+        { "command": "localshare.refreshServers", "when": "view == localshare.servers || view == localshare.workspace", "group": "navigation@2" },
+        { "command": "localshare.shareCustomPort", "when": "view == localshare.servers", "group": "navigation@1" },
+        { "command": "localshare.shareGroup", "when": "view == localshare.shares", "group": "navigation@2" },
+        { "command": "localshare.stopAllShares", "when": "view == localshare.shares && localshare.hasActiveShares", "group": "navigation@3" },
+        { "command": "localshare.clearHistory", "when": "view == localshare.shares", "group": "overflow@1" },
+        { "command": "localshare.addCustomDomain", "when": "view == localshare.domains", "group": "navigation@1" },
+        { "command": "localshare.showAuditLog", "when": "view == localshare.security", "group": "navigation@1" },
+        { "command": "localshare.runDiagnostics", "when": "view == localshare.settings", "group": "navigation@1" },
+        { "command": "localshare.openSettings", "when": "view == localshare.settings", "group": "navigation@2" }
+      ],
+      "view/item/context": [
+        { "command": "localshare.startSharingServer", "when": "viewItem =~ /^server(\\.|$)/ && viewItem =~ /shareable/", "group": "inline@1" },
+        { "command": "localshare.startSharingServer", "when": "viewItem =~ /^server(\\.|$)/ && viewItem =~ /shareable/", "group": "1_share@1" },
+        { "command": "localshare.copyUrl", "when": "viewItem =~ /^share\\..*hasUrl/", "group": "inline@1" },
+        { "command": "localshare.openUrl", "when": "viewItem =~ /^share\\..*hasUrl/", "group": "inline@2" },
+        { "command": "localshare.stopShare", "when": "viewItem =~ /^share\\..*running/", "group": "inline@3" },
+        { "command": "localshare.restartShare", "when": "viewItem =~ /^share\\./", "group": "1_lifecycle@1" },
+        { "command": "localshare.stopShare", "when": "viewItem =~ /^share\\..*running/", "group": "1_lifecycle@2" },
+        { "command": "localshare.copyUrl", "when": "viewItem =~ /^share\\..*hasUrl/", "group": "2_url@1" },
+        { "command": "localshare.openUrl", "when": "viewItem =~ /^share\\..*hasUrl/", "group": "2_url@2" },
+        { "command": "localshare.copyCustomerMessage", "when": "viewItem =~ /^share\\..*hasUrl/", "group": "2_url@3" },
+        { "command": "localshare.renameShare", "when": "viewItem =~ /^share\\./", "group": "3_meta@1" },
+        { "command": "localshare.editShareDescription", "when": "viewItem =~ /^share\\./", "group": "3_meta@2" },
+        { "command": "localshare.setShareGroup", "when": "viewItem =~ /^share\\./", "group": "3_meta@3" },
+        { "command": "localshare.reshareFromHistory", "when": "viewItem == history", "group": "inline@1" },
+        { "command": "localshare.reshareFromHistory", "when": "viewItem == history", "group": "1@1" },
+        { "command": "localshare.copyDomainUrl", "when": "viewItem =~ /^domain\\./", "group": "inline@1" },
+        { "command": "localshare.openDomainUrl", "when": "viewItem =~ /^domain\\./", "group": "inline@2" },
+        { "command": "localshare.verifyCustomDomain", "when": "viewItem =~ /^domain\\./", "group": "1@1" },
+        { "command": "localshare.removeCustomDomain", "when": "viewItem =~ /^domain\\./", "group": "9@1" },
+        { "command": "localshare.startNamedTunnel", "when": "viewItem == namedTunnel.stopped", "group": "inline@1" },
+        { "command": "localshare.startNamedTunnel", "when": "viewItem == namedTunnel.stopped", "group": "1@1" },
+        { "command": "localshare.deleteNamedTunnel", "when": "viewItem =~ /^namedTunnel\\./", "group": "9@1" }
+      ],
+      "commandPalette": [
+        { "command": "localshare.startSharingServer", "when": "false" },
+        { "command": "localshare.reshareFromHistory", "when": "false" },
+        { "command": "localshare.verifyCustomDomain", "when": "false" },
+        { "command": "localshare.startNamedTunnel", "when": "false" },
+        { "command": "localshare.deleteNamedTunnel", "when": "false" },
+        { "command": "localshare.copyDomainUrl", "when": "false" },
+        { "command": "localshare.openDomainUrl", "when": "false" },
+        { "command": "localshare.removeCustomDomain", "when": "false" }
+      ]
+    },
+    "configuration": {
+      "title": "LocalShare",
+      "properties": {
+        "localshare.provider": {
+          "type": "string",
+          "enum": ["cloudflare"],
+          "enumDescriptions": ["Cloudflare Tunnel (Quick Tunnels and named tunnels)"],
+          "default": "cloudflare",
+          "description": "Tunnel provider used for sharing."
+        },
+        "localshare.cloudflared.path": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Absolute path to a cloudflared executable. Leave empty to use PATH or the verified copy managed by LocalShare."
+        },
+        "localshare.detection.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Refresh detected local servers periodically while the LocalShare sidebar is visible."
+        },
+        "localshare.detection.refreshIntervalSeconds": {
+          "type": "number",
+          "default": 15,
+          "minimum": 5,
+          "maximum": 600,
+          "description": "Interval for automatic server detection."
+        },
+        "localshare.detection.extraPorts": {
+          "type": "array",
+          "items": { "type": "number", "minimum": 1, "maximum": 65535 },
+          "default": [],
+          "description": "Additional ports to always check when detecting local servers."
+        },
+        "localshare.detection.showAllListeners": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show every local TCP listener instead of only likely development servers."
+        },
+        "localshare.sharing.rewriteHostHeader": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send 'Host: localhost:<port>' to your dev server so frameworks like Vite and Angular accept tunneled requests."
+        },
+        "localshare.sharing.startupTimeoutSeconds": {
+          "type": "number",
+          "default": 45,
+          "minimum": 10,
+          "maximum": 300,
+          "description": "Maximum time to wait for a tunnel to become reachable."
+        },
+        "localshare.sharing.autoReconnect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Restart the tunnel connector automatically if it exits unexpectedly."
+        },
+        "localshare.sharing.copyUrlOnStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Copy the public URL to the clipboard as soon as a share is online."
+        },
+        "localshare.security.confirmBeforeSharing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ask for confirmation before exposing a local server publicly."
+        },
+        "localshare.security.allowLanTargets": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow sharing services on other devices in your private network (RFC1918 addresses). Off by default."
+        },
+        "localshare.security.allowedSensitivePorts": {
+          "type": "array",
+          "items": { "type": "number", "minimum": 1, "maximum": 65535 },
+          "default": [],
+          "scope": "machine",
+          "description": "Ports of normally blocked services (databases, SSH, Docker daemon…) you explicitly allow to be shared. Strongly discouraged."
+        },
+        "localshare.security.passwordSessionHours": {
+          "type": "number",
+          "default": 12,
+          "minimum": 1,
+          "maximum": 168,
+          "description": "How long a visitor stays signed in after entering the preview password."
+        },
+        "localshare.cloud.apiUrl": {
+          "type": "string",
+          "default": "https://cloud.lorndavid.online/api/v1",
+          "description": "Optional LocalShare Cloud API URL (defaults to https://cloud.lorndavid.online/api/v1). Used only when you connect a LocalShare Cloud account."
+        },
+        "localshare.cloud.organizationId": {
+          "type": "string",
+          "default": "",
+          "description": "LocalShare Cloud organization to sync share metadata to."
+        },
+        "localshare.logLevel": {
+          "type": "string",
+          "enum": ["error", "warn", "info", "debug"],
+          "default": "info",
+          "description": "Verbosity of the LocalShare output channel."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs --production",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "test": "vitest run",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:host": "node esbuild.mjs && tsc -p tsconfig.host-tests.json && node ./out/test/extension/runTest.js",
+    "test:all": "pnpm run test && pnpm run test:host",
+    "package": "node esbuild.mjs --production && vsce package --no-dependencies --out dist/localshare.vsix",
+    "vscode:prepublish": "node esbuild.mjs --production"
+  },
+  "dependencies": {
+    "@localshare/shared-types": "workspace:*",
+    "@localshare/validation": "workspace:*",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/vscode": "~1.95.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.6.2",
+    "esbuild": "^0.25.10",
+    "mocha": "^11.7.4",
+    "vitest": "^3.2.4"
+  }
+}
+

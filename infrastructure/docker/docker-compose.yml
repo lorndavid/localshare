@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-localshare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localshare}
+      POSTGRES_DB: ${POSTGRES_DB:-localshare}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-localshare} -d ${POSTGRES_DB:-localshare}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3100
+      DATABASE_URL: postgresql://${POSTGRES_USER:-localshare}:${POSTGRES_PASSWORD:-localshare}@postgres:5432/${POSTGRES_DB:-localshare}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-only-jwt-secret-replace-in-production-32chars}
+      PROVIDER_ENCRYPTION_KEY: ${PROVIDER_ENCRYPTION_KEY:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5180,http://localhost:8080}
+    ports:
+      - "3100:3100"
+
+  web-dashboard:
+    build:
+      context: ../..
+      dockerfile: apps/web-dashboard/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "5180:8080"
+
+volumes:
+  pgdata:
+

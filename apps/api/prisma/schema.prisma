@@ -1,0 +1,293 @@
+// LocalShare Cloud API schema.
+// Stores METADATA ONLY: organisations, members, workspaces, tunnel metadata, domains,
+// access policies, provider connections (encrypted) and audit events.
+// No application traffic and no source code is ever stored.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum TunnelKind {
+  QUICK
+  NAMED
+}
+
+enum TunnelState {
+  STOPPED
+  STARTING
+  CONNECTING
+  ONLINE
+  RECONNECTING
+  STOPPING
+  ERROR
+}
+
+enum AccessMode {
+  PUBLIC
+  PASSWORD
+  CLOUDFLARE_ACCESS
+}
+
+enum DomainStatus {
+  PENDING_VERIFICATION
+  VERIFIED
+  FAILED
+  REVOKED
+}
+
+enum VerificationMethod {
+  DNS_TXT
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  /// Always stored lower-cased (enforced in the service and by a CHECK constraint).
+  email        String   @unique @db.VarChar(254)
+  name         String   @db.VarChar(100)
+  passwordHash String   @db.VarChar(255)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  sessions            Session[]
+  apiTokens           ApiToken[]
+  memberships         OrganizationMember[]
+  auditEvents         AuditEvent[]
+  providerConnections ProviderConnection[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  /// SHA-256 of the current refresh token. Rotated on every refresh.
+  tokenHash String    @unique @db.VarChar(64)
+  expiresAt DateTime  @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  userAgent String?   @db.VarChar(512)
+  ip        String?   @db.VarChar(64)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rotatedTokens SessionRotatedToken[]
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// Previously-issued (rotated-out) refresh token hashes. Presenting one of these again is
+/// refresh-token reuse and causes the whole session to be revoked.
+model SessionRotatedToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @db.Uuid
+  tokenHash String   @unique @db.VarChar(64)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("session_rotated_tokens")
+}
+
+model ApiToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  name       String    @db.VarChar(64)
+  /// First characters of the token (e.g. `lsk_ab12cd34`) for identification in UIs.
+  prefix     String    @db.VarChar(16)
+  tokenHash  String    @unique @db.VarChar(64)
+  lastUsedAt DateTime? @db.Timestamptz(3)
+  expiresAt  DateTime? @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_tokens")
+}
+
+model Organization {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(64)
+  slug      String    @unique @db.VarChar(64)
+  /// Soft delete: allows recovery of an accidentally deleted organisation by an operator.
+  deletedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+
+  members             OrganizationMember[]
+  workspaces          Workspace[]
+  tunnels             Tunnel[]
+  domains             Domain[]
+  accessPolicies      AccessPolicy[]
+  auditEvents         AuditEvent[]
+  providerConnections ProviderConnection[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  userId         String   @db.Uuid
+  role           OrgRole
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+model Workspace {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  name           String   @db.VarChar(64)
+  description    String?  @db.VarChar(500)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tunnels      Tunnel[]
+
+  @@unique([organizationId, name])
+  @@map("workspaces")
+}
+
+model Tunnel {
+  id             String      @id @default(uuid()) @db.Uuid
+  organizationId String      @db.Uuid
+  workspaceId    String?     @db.Uuid
+  clientId       String      @db.VarChar(128)
+  name           String      @db.VarChar(64)
+  kind           TunnelKind
+  provider       String      @db.VarChar(32)
+  state          TunnelState
+  accessMode     AccessMode
+  localTarget    String      @db.VarChar(255)
+  publicUrl      String?     @db.VarChar(2048)
+  framework      String?     @db.VarChar(64)
+  startedAt      DateTime?   @db.Timestamptz(3)
+  stoppedAt      DateTime?   @db.Timestamptz(3)
+  createdAt      DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime    @updatedAt @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, clientId])
+  @@index([organizationId, state])
+  @@index([workspaceId])
+  @@map("tunnels")
+}
+
+model Domain {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  hostname       String       @db.VarChar(253)
+  status         DomainStatus @default(PENDING_VERIFICATION)
+  verifiedAt     DateTime?    @db.Timestamptz(3)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  verification DomainVerification?
+
+  @@unique([organizationId, hostname])
+  @@index([hostname])
+  // A partial unique index (hostname WHERE status = 'VERIFIED') is created in migration SQL.
+  @@map("domains")
+}
+
+model DomainVerification {
+  id            String             @id @default(uuid()) @db.Uuid
+  domainId      String             @unique @db.Uuid
+  method        VerificationMethod @default(DNS_TXT)
+  recordName    String             @db.VarChar(300)
+  recordValue   String             @db.VarChar(128)
+  lastCheckedAt DateTime?          @db.Timestamptz(3)
+  lastError     String?            @db.VarChar(500)
+  attempts      Int                @default(0)
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @db.Timestamptz(3)
+
+  domain Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@map("domain_verifications")
+}
+
+model AccessPolicy {
+  id             String     @id @default(uuid()) @db.Uuid
+  organizationId String     @db.Uuid
+  name           String     @db.VarChar(64)
+  mode           AccessMode
+  /// { allowedEmails: string[], allowedEmailDomains: string[], sessionDurationHours: number }
+  rules          Json       @db.JsonB
+  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime   @updatedAt @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@map("access_policies")
+}
+
+model AuditEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @db.Uuid
+  actorUserId    String?  @db.Uuid
+  action         String   @db.VarChar(64)
+  targetType     String?  @db.VarChar(64)
+  targetId       String?  @db.VarChar(128)
+  /// Redacted before persistence.
+  metadata       Json     @default("{}") @db.JsonB
+  ipAddress      String?  @db.VarChar(64)
+  requestId      String?  @db.VarChar(128)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor        User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([actorUserId])
+  @@map("audit_events")
+}
+
+model ProviderConnection {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  provider       String   @db.VarChar(32)
+  label          String   @db.VarChar(64)
+  accountId      String?  @db.VarChar(64)
+  /// AES-256-GCM: base64(iv).base64(authTag).base64(ciphertext). Never returned by the API.
+  encryptedToken String
+  tokenLast4     String   @db.VarChar(4)
+  createdById    String?  @db.Uuid
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, label])
+  @@map("provider_connections")
+}

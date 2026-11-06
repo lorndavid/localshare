@@ -1,0 +1,123 @@
+name: LocalShare CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  windows-extension-and-packages:
+    name: Windows Primary Validation & VSIX Package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared packages
+        run: pnpm build:packages
+      - name: Typecheck & Lint
+        run: |
+          pnpm --filter @localshare/validation run typecheck
+          pnpm --filter @localshare/validation run lint
+          pnpm --filter localshare-vscode run typecheck
+          pnpm --filter localshare-vscode run lint
+      - name: Unit, Integration, Security & Performance Tests
+        run: |
+          pnpm --filter @localshare/validation run test
+          pnpm --filter localshare-vscode run test
+      - name: Package VSIX
+        run: pnpm --filter localshare-vscode run package
+      - name: Upload VSIX Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: localshare-vsix-windows
+          path: apps/vscode-extension/dist/localshare.vsix
+
+  cross-platform-matrix:
+    name: macOS & Linux Compatibility
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:packages
+      - run: pnpm --filter @localshare/validation run test
+      - run: pnpm --filter localshare-vscode run test
+
+  cloud-platform-and-e2e:
+    name: Cloud API, PostgreSQL Migrations, Web Dashboard & Playwright E2E
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: localshare
+          POSTGRES_PASSWORD: localshare
+          POSTGRES_DB: localshare_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://localshare:localshare@localhost:55432/localshare_test?schema=public
+      JWT_SECRET: ci-test-jwt-secret-with-at-least-32-characters
+      PROVIDER_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      CORS_ORIGINS: http://localhost:5180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:packages
+      - name: Generate Prisma Client & Apply Migrations
+        run: |
+          pnpm --filter @localshare/api run prisma:generate
+          pnpm --filter @localshare/api run prisma:migrate:deploy
+      - name: API Typecheck, Lint, Unit & Integration Tests
+        run: |
+          pnpm --filter @localshare/api run typecheck
+          pnpm --filter @localshare/api run lint
+          pnpm --filter @localshare/api run test
+          pnpm --filter @localshare/api run test:integration
+          pnpm --filter @localshare/api run build
+      - name: Web Dashboard Typecheck, Lint, Unit & Build
+        run: |
+          pnpm --filter @localshare/web-dashboard run typecheck
+          pnpm --filter @localshare/web-dashboard run lint
+          pnpm --filter @localshare/web-dashboard run test
+          pnpm --filter @localshare/web-dashboard run build
+      - name: Install Playwright Chromium & Run E2E
+        run: |
+          pnpm --filter @localshare/web-dashboard exec playwright install --with-deps chromium
+          pnpm --filter @localshare/web-dashboard run test:e2e
+      - name: Dependency Security Audit
+        run: pnpm audit --audit-level=critical || true
+

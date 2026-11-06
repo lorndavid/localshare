@@ -1,0 +1,30 @@
+{
+  "name": "localshare",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LocalShare — securely share local development servers through HTTPS tunnels.",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/** run build && pnpm -r --filter ./apps/** run build",
+    "build:packages": "pnpm -r --filter ./packages/** run build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test",
+    "test:extension": "pnpm --filter localshare-vscode run test:all",
+    "package:extension": "pnpm --filter localshare-vscode run package",
+    "test:api": "pnpm --filter @localshare/api run test",
+    "test:web": "pnpm --filter @localshare/web-dashboard run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.39.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0"
+  }
+}
+
